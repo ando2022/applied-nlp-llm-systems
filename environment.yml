@@ -1,0 +1,19 @@
+name: applied-nlp-llm
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - numpy
+  - pandas
+  - matplotlib
+  - jupyter
+  - scikit-learn
+  - pip:
+    - transformers
+    - torch
+    - sentence-transformers
+    - faiss-cpu
+    - langchain
+    - openai
