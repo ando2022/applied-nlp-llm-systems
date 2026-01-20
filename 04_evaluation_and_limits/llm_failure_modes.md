@@ -1,27 +1,49 @@
-# Applied NLP + LLM Systems (with Evaluation)
+# Applied NLP + LLM Systems for High-Stakes Text
 
-This repository contains **small, applied NLP and LLM projects** that turn unstructured text into **reliable, testable systems**.
+This repository shows **how to turn complex, high-risk text into usable decision support**  
+using NLP and LLMs — *without* relying on blind automation.
 
-The focus is not on “cool demos,” but on **problem framing, evaluation discipline, and practical trade-offs** — the parts that matter in real products and **high-stakes, regulated environments**.
+It focuses on **documents where being wrong is costly**:
+regulatory disclosures, financial reporting, audit language, ESG statements, and policy text.
+
+The goal is not to build chatbots.  
+The goal is to build **systems that help humans reason over text they must be able to trust**.
+
+---
+
+## Why this repository exists
+
+Most NLP and LLM demos assume:
+- clean data,
+- clear labels,
+- forgiving use-cases,
+- and unlimited tolerance for hallucinations.
+
+Real organizations do not operate under those assumptions.
+
+This repository exists to show:
+- how retrieval, classification, and generation behave **when the text is ambiguous**,
+- what breaks first when data is small or weakly labeled,
+- where LLMs help — and where they should *not* be used.
+
+If you work with **regulated, financial, legal, or policy-relevant text**, this is the reality.
 
 ---
 
 ## What this repository demonstrates
 
 **This repository demonstrates:**
-- Realistic framing of NLP problems under uncertainty
-- Comfort working with incomplete, ambiguous, and weakly labeled text data
-- Awareness of evaluation pitfalls in small-data settings
-- Understanding of NLP behavior in regulated contexts
-- Preference for **decision support** over automation theater
+- How to frame NLP problems where *accuracy is secondary to traceability*
+- How to evaluate systems when metrics are misleading or unavailable
+- How retrieval quality dominates downstream LLM behavior
+- How simple baselines often outperform complex models in constrained settings
+- How to design NLP systems as **decision support**, not automation
 
-**This repository does *not* claim:**
-- Production-ready systems
-- State-of-the-art benchmarks
-- Generalizable performance metrics
-- Automation without human oversight
-
-These omissions are intentional.
+**This repository deliberately avoids:**
+- production hype,
+- leaderboard optimization,
+- black-box claims,
+- automation without accountability.
 
 ---
 
@@ -29,28 +51,22 @@ These omissions are intentional.
 
 This is **not** a collection of AI demos.
 
-It is a set of **small, inspectable experiments** designed to show how NLP systems behave under realistic constraints:
-- limited data,
-- ambiguous categories,
-- legally and economically meaningful language,
-- strict requirements on traceability.
+It is a set of **small, inspectable systems** designed to answer one question:
+
+> *Can a human rely on this output when the consequences matter?*
 
 The emphasis is on:
-- framing problems *before* automating them,
-- understanding retrieval and classification failure modes,
-- evaluating models honestly rather than optimizing metrics,
-- documenting limits instead of hiding them.
-
-The methods used here are common in production.  
-What is uncommon is examining **where and why they fail**.
+- framing the problem before choosing the model,
+- exposing assumptions instead of hiding them,
+- surfacing failure modes early,
+- documenting limits clearly.
 
 ---
 
-## Methods overview & rationale
+## Methods used — and why they matter
 
-This repository applies a small set of **foundational NLP methods** that appear repeatedly in real-world information systems: **retrieval, classification, and generation**.
-
-The focus is on **method choice, evaluation discipline, and failure awareness**, not model novelty.
+This repository uses **methods that are already common in production**.
+The value is not novelty — it is **how these methods are constrained, evaluated, and interpreted**.
 
 ---
 
@@ -58,23 +74,21 @@ The focus is on **method choice, evaluation discipline, and failure awareness**,
 
 **Location:** `01_rag/`
 
-**Purpose**  
-RAG is used here not as a chatbot pattern, but as a **controlled document analysis tool**.  
-Answers must be grounded in retrieved text, and every factual statement must be traceable to a source.
+**What it is here**  
+RAG is used as a **document analysis discipline**, not a conversational interface.
 
-**Why RAG**  
-In regulated and high-stakes domains (finance, law, compliance), generative models are only useful when constrained by:
-- document-level grounding,
-- explicit citations,
-- retrieval quality checks.
+Answers:
+- must be grounded in retrieved text,
+- must include page-level citations,
+- must explicitly report when information is missing.
 
-**What is evaluated**
-- Whether relevant passages are retrieved
-- Whether answers stay within retrieved context
-- Whether missing information is correctly reported as *not found*
+**Why this matters**  
+In finance, law, audit, and compliance:
+- fluent answers without sources are worse than no answer,
+- hallucinations are operational risk,
+- retrieval errors are the dominant failure mode.
 
-**What this shows**  
-LLMs are **reasoning amplifiers, not sources of truth** — and retrieval quality is often the dominant failure mode.
+This project makes those constraints explicit.
 
 ---
 
@@ -82,25 +96,18 @@ LLMs are **reasoning amplifiers, not sources of truth** — and retrieval qualit
 
 **Location:** `02_semantic_search/`
 
-**Purpose**  
-Semantic search is treated as an **analytical primitive**, not a product feature.  
-The goal is to inspect what *similarity* actually means in practice.
+**What it is here**  
+Semantic search is treated as an **analytical tool**, not a UX feature.
 
-**Why embeddings instead of keywords**
-Keyword search fails when:
-- language varies across documents,
-- the same concept is expressed differently,
-- queries are exploratory rather than precise.
+Instead of asking “does it work?”, the project asks:
+- *what kinds of associations does the model make?*
+- *when does similarity stop meaning relevance?*
 
-Embeddings enable retrieval by semantic association, which is essential in research and investigative workflows.
+**Why this matters**  
+Investigative and research workflows depend on recall and context —  
+but false semantic proximity can mislead analysis.
 
-**How it is evaluated**
-- Similarity scores are exposed
-- Retrieved passages are manually inspected
-- Relevance is assessed qualitatively, not assumed
-
-**What this shows**  
-Semantic similarity is probabilistic, context-dependent, and prone to spurious matches — especially in legal and financial text.
+This module exposes similarity scores and forces human inspection.
 
 ---
 
@@ -108,34 +115,18 @@ Semantic similarity is probabilistic, context-dependent, and prone to spurious m
 
 **Location:** `03_text_classification/`
 
-**Purpose**  
-To compare **simple, interpretable baselines** with **more expressive models** under realistic data constraints.
+**What it is here**  
+A controlled comparison between:
+- interpretable classical baselines (TF-IDF + Logistic Regression),
+- and transformer-based models.
 
-**Why start with a baseline**  
-TF-IDF + Logistic Regression:
-- is fast,
-- transparent,
-- often competitive in small or noisy datasets.
+**Why this matters**  
+In small or weakly labeled datasets:
+- complex models are unstable,
+- metrics fluctuate wildly,
+- interpretability matters more than marginal accuracy.
 
-**Why introduce a transformer**  
-Transformers capture:
-- contextual meaning,
-- implicit signals,
-- cross-sentence dependencies,
-
-but introduce:
-- higher variance,
-- stronger data requirements,
-- reduced interpretability.
-
-**What is evaluated**
-- Class imbalance effects
-- Model instability on small datasets
-- Precision/recall trade-offs
-- Cases where a “better” model performs worse
-
-**What this shows**  
-Model choice is a **decision under constraints**, not a leaderboard exercise.
+This project shows **when simpler models are the safer choice**.
 
 ---
 
@@ -143,44 +134,38 @@ Model choice is a **decision under constraints**, not a leaderboard exercise.
 
 **Location:** `04_evaluation_and_limits/`
 
-Evaluation is treated as a **first-class concern**, not an afterthought.
+Evaluation is treated as a **design requirement**, not an afterthought.
 
 This includes:
-- explicit acknowledgment of weak or missing labels,
-- avoidance of misleading metrics,
-- documentation of known failure modes,
-- refusal to over-interpret results.
-
-Failures are surfaced deliberately, because they are the dominant source of risk in applied NLP systems.
+- explicit acknowledgment of weak labels,
+- refusal to over-interpret metrics,
+- documentation of failure cases,
+- and clear statements of *what this system should not be used for*.
 
 ---
 
-## Projects
+## Who this repository is for
 
-1. **RAG over Documents (PDF QA with citations)**  
-   *Goal:* Answer questions using provided documents only, with traceable sources.
-
-2. **Semantic Search (Sentence Transformers)**  
-   *Goal:* Retrieve relevant passages using embeddings and similarity metrics.
-
-3. **Text Classification (Baseline → Transformer)**  
-   *Goal:* Compare interpretable baselines and transformer models under realistic constraints.
+This work is relevant if you:
+- work with financial, regulatory, ESG, legal, or policy text,
+- build or evaluate NLP systems used by analysts, researchers, or professionals,
+- care more about **trust and traceability** than novelty,
+- need to justify *why* a model is used — not just *that* it works.
 
 ---
 
 ## Author & perspective
 
-This repository reflects my work at the intersection of:
+This repository reflects work at the intersection of:
 - applied NLP and data science,
 - financial analysis, accounting, and audit,
 - research-driven evaluation.
 
-I have worked across academic research, financial and sustainability analytics, industry-facing data science roles, and startup environments.  
-This informs the perspective taken here: an emphasis on **traceability, explainability, and decision relevance**, rather than purely generative output.
+The perspective throughout is shaped by experience in:
+academia, financial and sustainability analytics, industry data science, and startup environments.
 
-The projects are designed with **regulated and high-stakes domains** in mind (finance, audit, ESG, compliance), where language is legally and economically consequential and model failure has real costs.
-
-> Each project lives in its own folder with a short README describing the approach, evaluation, and limitations.
+The common thread:  
+**language is economically and legally consequential**, and models must be treated accordingly.
 
 ---
 
@@ -188,18 +173,20 @@ The projects are designed with **regulated and high-stakes domains** in mind (fi
 
 - Create an environment from `environment.yml`
 - Run notebooks locally or in Colab
+- Each project folder contains a focused README
 
 ---
 
-## Example industry & freelance use-cases
+## Example professional use-cases
 
-- Build a **RAG prototype** over internal PDFs (policy, legal, ESG, product docs)
-- Implement **semantic search** for investigative or research workflows
-- Create **classification pipelines** for routing, tagging, or triage
-- Audit existing LLM workflows: **evaluation, failure modes, and risk analysis**
+- Prototype **RAG over internal regulatory or policy documents**
+- Implement **semantic search for investigative research**
+- Build **classification pipelines** for triage or routing
+- Audit existing LLM systems for **risk, failure modes, and evaluation gaps**
 
 ---
 
 ## Contact
 
-If you’d like to collaborate on document search, RAG, or applied NLP systems — especially in regulated or high-stakes contexts — feel free to reach out.
+If you work with high-stakes text and want systems that support judgment
+instead of replacing it, feel free to reach out.
