@@ -1,199 +1,216 @@
 # Applied NLP + LLM Systems  
-### From “it runs” to “it can be trusted”
+### Understanding how text systems help — and where they fail
 
-This repository documents a series of **small, applied experiments** in Natural Language Processing (NLP) and Large Language Models (LLMs), focused on one core question:
+This repository documents a small set of **applied NLP experiments** built to understand a very practical question:
 
-> **When do NLP systems help real decision-making — and when do they quietly mislead?**
+> **How can we find, explain, and organize information in large text documents — and when do NLP systems quietly break?**
 
-Instead of optimizing for impressive demos, this work focuses on **grounding, evaluation, and failure awareness** — the parts that matter in regulated, financial, and high-stakes environments.
-
----
-
-## Why this repository exists
-
-Many NLP projects look convincing:
-- fluent answers,
-- confident predictions,
-- clean notebooks.
-
-But in domains like **finance, regulation, accounting, ESG, and compliance**, those qualities are not enough.
-
-Here, *being wrong confidently is worse than being unsure*.
-
-This repository exists to explore:
-- what actually happens when NLP systems are applied to **real documents**,
-- how they fail under **data scarcity and ambiguity**,
-- and how to detect those failures early.
+Instead of building polished demos, this work focuses on **clarity, limits, and decision-making**.  
+The goal is not automation for its own sake, but understanding **which tools answer which questions**, and which ones should *not* be used at all.
 
 ---
 
-## What I actually did (in plain language)
+## The core problem this repo explores
 
-I built and tested **three core NLP patterns** that appear repeatedly in real products:
+When working with long documents (financial reports, regulatory texts, policies, disclosures), people usually want to do one or more of the following:
 
-1. **Document Question Answering (RAG)**
-2. **Semantic Search**
-3. **Text Classification**
+1. **Find where relevant information is**
+2. **Understand what a document says about a specific question**
+3. **Organize text into categories for easier navigation**
 
-For each, I deliberately:
-- used *small or imperfect data*,
-- exposed intermediate outputs,
-- and documented where results became unreliable.
+These are **three different problems**.
 
-The goal was **understanding behavior**, not maximizing scores.
+This repository explores **one method for each**, using simple, inspectable implementations:
 
----
+| Human question | NLP method |
+|---------------|-----------|
+| Where should I look? | Semantic Search |
+| What does it say? | RAG (Retrieval-Augmented Generation) |
+| How should this be organized? | Text Classification |
 
-## 01 — RAG over Documents (PDF QA with citations)
-
-### Purpose
-To test whether a Retrieval-Augmented Generation (RAG) system can answer questions  
-**only from source documents**, with **explicit page-level citations**.
-
-This mirrors real requirements in legal, financial, and regulatory work, where:
-- hallucinations are unacceptable,
-- sources must be traceable,
-- and “I don’t know” is a valid outcome.
-
-### What was done
-- Extracted text from selected pages of a real annual report  
-- Chunked text with page references  
-- Embedded chunks and retrieved top-k passages  
-- Generated answers **strictly constrained** to retrieved text  
-- Required every factual claim to cite a page number  
-
-### Result (what worked)
-- Produced **grounded, traceable answers** to questions about:
-  - regulatory fragmentation,
-  - post-merger risks,
-  - litigation exposure,
-  - accounting judgments.
-- When information was present, it was surfaced with citations.
-
-### What didn’t work (and why it matters)
-- Retrieval scores were sometimes close across unrelated passages  
-- Tables and dense disclosures degraded retrieval quality  
-- Some answers required manual inspection to verify relevance  
-
-**Key insight:**  
-In RAG systems, **retrieval quality dominates answer quality**.  
-LLMs amplify what you retrieve — they do not fix it.
+The projects are intentionally small so that **behavior and failure modes are visible**.
 
 ---
 
-## 02 — Semantic Search (Embedding-based retrieval)
+## 01 — Semantic Search  
+### *“Where should I look?”*
 
-### Purpose
-To understand what “semantic similarity” actually means in financial and regulatory language — and where it breaks.
+### What problem this solves
 
-### What was done
-- Embedded short document passages  
-- Queried them using natural-language questions  
-- Inspected similarity scores and retrieved text manually  
+Semantic search is about **finding relevant text**, not answering questions.
 
-### Result
-- The most relevant passage was usually ranked first  
-- Secondary results often reflected **thematic similarity**, not factual relevance  
+Given:
+- a set of document passages
+- a query or topic
 
-Example:
-A query about *Credit Suisse acquisition risk* retrieved:
-- a litigation-risk passage (correct),
-- an accounting-judgment passage (semantically related, but irrelevant),
-- a regulatory-outlook passage (topically adjacent).
+The system returns the passages that are **closest in meaning**, even if they do not share exact words.
+
+### How it works (conceptually)
+
+- Each text passage is converted into a numerical vector using an **embedding model**
+- The query is embedded the same way
+- Similarity (cosine similarity) is computed between vectors
+- Passages are ranked by closeness
+
+There is **no generation**, no reasoning, no summarization.
+
+### What this experiment showed
+
+- The most relevant passage was often ranked first
+- Secondary results were thematically related but sometimes irrelevant
+- Similarity scores exposed uncertainty rather than hiding it
 
 ### Why this matters
-Semantic search is powerful — but **not precise**.
 
-In investigative or compliance settings:
-- similarity ≠ correctness,
-- ranking ≠ truth,
-- and human review remains essential.
+Semantic search is a **foundation**:
+- RAG depends on it
+- Classification pipelines often start with it
+- Human review is still required
+
+**Key insight:**  
+Semantic similarity is probabilistic, not factual.  
+It helps you *look in the right place*, but it does not tell you what is true.
 
 ---
 
-## 03 — Text Classification (when not to classify)
+## 02 — RAG over Documents (PDF QA with citations)  
+### *“Answer — but only from the document”*
 
-### Purpose
-To test whether short regulatory or financial statements can be reliably classified with:
-- small datasets,
-- fuzzy categories,
-- and minimal labels.
+### What problem this solves
 
-This reflects how classification is often proposed in practice.
+RAG (Retrieval-Augmented Generation) is used when you want:
+- answers to questions
+- grounded strictly in source documents
+- with traceable citations
 
-### What was done
+This is critical in financial, legal, and regulatory contexts where:
+- hallucinations are unacceptable
+- sources must be explicit
+- “not found” is a valid answer
 
-**Baseline model**
-- TF-IDF features + Logistic Regression  
-- Two broad classes: `regulation` vs `financial_performance`  
-- Very small dataset  
+### How it works
 
-**Transformer model**
-- Pretrained sentiment classifier applied to the same text  
-- Used intentionally to test **model–task mismatch**
+RAG combines two steps:
 
-### Result (and why it’s important)
+1. **Semantic search** retrieves relevant passages  
+2. An **LLM** generates an answer **only from those passages**
+
+The model is constrained:
+- it cannot use outside knowledge
+- every factual claim must be traceable to retrieved text
+
+### What this experiment showed
+
+- When retrieval worked well, answers were accurate and traceable
+- When retrieval was weak, answers degraded accordingly
+- The LLM never “fixed” bad retrieval — it amplified it
+
+### Why this matters
+
+RAG systems are often described as “LLMs over documents”.
+
+This experiment shows the reality:
+
+> **RAG quality is determined more by retrieval than by generation.**
+
+LLMs do not create truth — they rearrange what they are given.
+
+---
+
+## 03 — Text Classification  
+### *“How should this text be labeled?”*
+
+### What problem this solves
+
+Classification does **not answer questions**.
+
+It assigns labels to text so that:
+- content can be filtered,
+- routed,
+- grouped,
+- or prioritized.
+
+Example:
+- regulation vs financial performance
+- risk vs strategy
+- legal vs operational
+
+### What was tested
+
+Two approaches were intentionally compared:
+
+#### 1. Baseline model
+- TF-IDF features + Logistic Regression
+- Very small dataset
+- Two broad, overlapping categories
+
+#### 2. Pretrained transformer
+- A sentiment classifier applied to regulatory text
+- Used intentionally to demonstrate **model–task mismatch**
+
+### What happened (and why it matters)
+
 - The baseline model produced unstable, near-random results  
-  → *Correct failure due to insufficient data*
+  → Correct behavior given insufficient data
 
-- The transformer produced **confident but meaningless outputs**  
-  → High confidence, wrong task, misleading signal  
+- The transformer produced confident predictions  
+  → But they were meaningless for the task
 
-**Key insight:**  
-Classification without sufficient data and domain-specific labels is not just weak — it is actively misleading.
+The transformer answered a **different question** (“positive vs negative sentiment”) while appearing highly confident.
+
+### Key insight
+
+> **Confidence is not correctness.**
+
+Classification without:
+- sufficient data,
+- clear labels,
+- domain-specific training
+
+is not just weak — it is misleading.
 
 ---
 
 ## What this repository demonstrates
 
-- How NLP systems behave under **real constraints**
-- Why baselines matter more than complex models
-- How confidence can hide incorrect assumptions
-- When *not* to automate
-- How to reason about model failure, not just success
+- How different NLP methods answer **different human questions**
+- Why semantic search, RAG, and classification are not interchangeable
+- How failure modes appear in realistic, small-data settings
+- Why evaluation matters more than fluent output
+- When automation should *not* be applied
 
 ---
 
 ## What this repository does *not* claim
 
 - Production-ready systems  
-- State-of-the-art benchmarks  
-- Generalizable performance metrics  
-- Automation without human judgment  
+- State-of-the-art performance  
+- Generalizable benchmarks  
+- Automation without human oversight  
 
 ---
 
-## Who this work is for
+## Why this work matters
 
-This work is relevant for teams working with:
-- legal and regulatory text,
-- financial disclosures,
-- ESG and compliance documents,
-- internal policy and governance material.
+Most problems in applied NLP do not come from bad models.
 
-Especially where:
-- traceability matters,
-- errors are costly,
-- and evaluation must be explicit.
+They come from:
+- unclear problem framing,
+- wrong tool selection,
+- and unexamined assumptions.
+
+This repository is a record of **learning how to ask the right questions before deploying models**.
 
 ---
 
-## Author perspective
+## Perspective
 
-My background spans:
+This work is informed by experience across:
 - applied NLP and data science,
 - financial analysis, accounting, and audit,
 - research-driven evaluation,
 - and startup environments.
 
-That combination informs the approach taken here:  
-**decision support over automation theater**.
+The guiding principle throughout is:
 
----
-
-## Why this matters for real work
-
-Most failures in applied NLP do not come from bad models.  
-They come from **misframed problems** and **unevaluated assumptions**.
-
-This repository is a record of learning how to spot those issues early.
+> **Decision support over automation theater.**
